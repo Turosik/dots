@@ -1,3 +1,6 @@
+import asyncio
+from logging import WARNING
+
 from database_operations.db import dots_get_recent
 from web_server.utils import format_decimal
 
@@ -37,7 +40,10 @@ class Subscriber:
         await self.recent_dots()
 
     async def notify(self, message):
-        await self.connection.send_json(message)
+        try:
+            await self.connection.send_json(message)
+        except asyncio.CancelledError:
+            self.app.log(WARNING, 'Notification coroutine cancelled due to timeout')
 
     async def send_message(self, message):
         await self.connection.send_str(message)

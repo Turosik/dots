@@ -76,13 +76,24 @@ class WebServer(web.Application):
     def log(self, level, message, trace=False):
         self.app_logger.log(level, message, extra={'proc': self.name}, exc_info=trace if level >= ERROR else None)
 
+    @staticmethod
+    async def notify_subscribers(notify_coroutines):
+        async def cancel_tasks_after_timeout(tasks, timeout):
+            await asyncio.sleep(timeout)
+            for task in tasks:
+                if not task.done():
+                    task.cancel()
+
+        notify_tasks = [asyncio.create_task(coro) for coro in notify_coroutines]
+        _ = asyncio.create_task(cancel_tasks_after_timeout(notify_tasks, 1))  # 1 sec timeout
+
     async def prices_collector(self):
         self.log(INFO, 'Prices collector started')
         async with aiohttp.ClientSession() as session:
             while True:
                 start = time.time()
                 dots_data = []
-                notify_tasks = []
+                notify_coroutines = []
                 try:
                     async with session.get(self.source_url) as response:
                         if response.status == 200:
@@ -100,7 +111,7 @@ class WebServer(web.Application):
                                     })
                                     for subscriber in self.subscribers:
                                         if subscriber.subscription == self.symbols[price['Symbol'].upper()]:
-                                            notify_tasks.append(subscriber.notify({
+                                            notify_coroutines.append(subscriber.notify({
                                                 'message': {
                                                     'assetName': price['Symbol'].upper(),
                                                     'time': int(datetime.utcnow().timestamp()),
@@ -115,8 +126,8 @@ class WebServer(web.Application):
                     if len(dots_data) > 0:
                         await dots_insert(self.db_engine, dots_data)
 
-                    if len(notify_tasks) > 0:
-                        await asyncio.gather(*notify_tasks)
+                    if len(notify_coroutines) > 0:
+                        _ = asyncio.create_task(self.notify_subscribers(notify_coroutines))
 
                 except asyncio.CancelledError:
                     self.log(INFO, 'Prices collector cancelling')
@@ -173,7 +184,6 @@ class WebServer(web.Application):
                                 await subscriber.send_message('Asset ID must be an integer')
                                 continue
 
-                            print(message['assetId'])
                             if message['assetId'] not in self.symbols.values():
                                 await subscriber.send_message('Asset ID does not exist')
                                 continue
