@@ -1,9 +1,8 @@
-import sys
 from logging import INFO
 
 import sqlalchemy as sa
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.engine import reflection
+from sqlalchemy.ext.declarative import declarative_base
 
 import database_operations.db as db_module
 from database_operations.utils import create_engine_sync

@@ -1,18 +1,18 @@
 import asyncio
 import json
 import time
+from datetime import datetime
 from decimal import Decimal
 from json import JSONDecodeError
 from logging import INFO, ERROR, WARNING
-from datetime import datetime
 
 import aiohttp
 from aiohttp import web, WSMessage
 
-from database_operations.db import symbols_get_all, dots_insert, dots_get_recent
-from settings.utils import convert_parameter_string_to_list
+from database_operations.db import symbols_get_all, dots_insert
 from database_operations.init_db import check_db_structure
 from database_operations.utils import create_engine_async, close_engine_async
+from settings.utils import convert_parameter_string_to_list
 from web_server.subscriber import Subscriber
 from web_server.utils import format_decimal
 
@@ -28,10 +28,9 @@ class WebServer(web.Application):
         self.name = 'APP'
         self.config = config_file
         self.app_logger = app_logger
-        self.decimals = int(config_file['data_source']['decimals'])
+        self.decimals = config_file['data_source'].getint('decimals')
         self.source_url = self.config['data_source']['url']
-        self.refresh_rate = int(self.config['data_source']['refresh_rate'])
-        self.symbols = convert_parameter_string_to_list(self.config['data_source']['symbols'])
+        self.refresh_rate = self.config['data_source'].getint('refresh_rate')
 
         super().__init__(*args, **kwargs)
 
@@ -46,7 +45,10 @@ class WebServer(web.Application):
     # noinspection PyUnusedLocal
     async def app_init(self, *args):
         self.log(INFO, 'Checking DB structure...')
-        check_db_structure(self.config['postgres'], self.symbols, self.log)
+        check_db_structure(
+            self.config['postgres'],
+            convert_parameter_string_to_list(self.config['data_source']['symbols']),
+            self.log)
         self.log(INFO, 'Checking DB structure COMPLETE!!!')
         self.db_engine = await create_engine_async(self.config['postgres'])
         self.log(INFO, 'Database connections READY!!! {}'.format(self.db_engine))
@@ -171,6 +173,7 @@ class WebServer(web.Application):
                                 await subscriber.send_message('Asset ID must be an integer')
                                 continue
 
+                            print(message['assetId'])
                             if message['assetId'] not in self.symbols.values():
                                 await subscriber.send_message('Asset ID does not exist')
                                 continue

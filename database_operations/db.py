@@ -1,15 +1,13 @@
-from _decimal import Decimal
 from datetime import datetime, timedelta
-from logging import INFO
 
 import sqlalchemy as sa
 from sqlalchemy import (
-    MetaData, Table, Column, Enum, SmallInteger, Boolean, DECIMAL,
-    Integer, String, DateTime, Float, ForeignKey, JSON
+    Column, SmallInteger, DECIMAL,
+    Integer, String, DateTime, ForeignKey
 )
 from sqlalchemy import func
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.dialects.postgresql import UUID, insert
 
 Base = declarative_base()
 
