@@ -1,0 +1,52 @@
+WEBSOCKET ws://127.0.0.1:8080
+Content-Type: application/json // We use it for highlighting
+
+===
+{
+    "action": "assets",
+    "message": {}
+}
+=== wait-for-server
+{
+    "action": "subscribe",
+    "message": {
+        "assetId": 10
+    }
+}
+=== wait-for-server
+{
+    "action": "abc",
+    "message": {
+        "assetId": 1
+    }
+}
+=== wait-for-server
+{
+    "action": "subscribe",
+    "message": "some string"
+}
+=== wait-for-server
+{
+    "action": "assets",
+    "message": {}
+}
+=== wait-for-server
+{
+    "action": "subscribe",
+    "message": {
+        "some_key": 1
+    }
+}
+=== wait-for-server
+=== wait-for-server
+=== wait-for-server
+=== wait-for-server
+{
+    "action": "subscribe",
+    "message": {
+        "assetId": 1
+    }
+}
+=== wait-for-server
+
+###

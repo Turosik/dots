@@ -1,6 +1,3 @@
-import json
-from datetime import datetime
-
 from database_operations.db import dots_get_recent
 from web_server.utils import format_decimal
 
@@ -43,7 +40,7 @@ class Subscriber:
         await self.connection.send_json(message)
 
     async def send_message(self, message):
-        await self.connection.send(message)
+        await self.connection.send_str(message)
 
     async def disconnect(self):
         await self.connection.close()
